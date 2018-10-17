@@ -1,0 +1,23 @@
+bin 1
+NEUTRAL cue, CENTRAL target, LATERALISED distractor, Correct
+{20}{30}.{100}{t<200-3500>201}
+
+bin 2
+NEUTRAL cue, LATERALISED target, CENTRAL distractor, Correct
+{20}{30}.{101}{t<200-3500>201}
+
+bin 3
+POSITIVE cue, CENTRAL target, LATERALISED distractor, Correct
+{22}{30}.{100}{t<200-3500>201}
+
+bin 4
+POSITIVE cue, LATERALISED target, CENTRAL distractor, Correct
+{22}{30}.{101}{t<200-3500>201}
+
+bin 5
+NEGATIVE cue, CENTRAL target, LATERALISED distractor, Correct
+{21}{30}.{100}{t<200-3500>201}
+
+bin 6
+NEGATIVE cue, LATERALISED target, CENTRAL distractor, Correct
+{21}{30}.{101}{t<200-3500>201}

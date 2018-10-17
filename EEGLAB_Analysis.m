@@ -3,8 +3,9 @@ close all;
 clc;
 
 os = 'mac';
-run_gui = true; % will open the gui and redraw after each step
+run_gui = false; % will open the gui and redraw after each step
 
+eeglab; % helps with loading files from BV
 %% Setup file locations
 subject_list = {'LAT_101'};
 nsubj = length(subject_list); % number of subjects
@@ -73,8 +74,7 @@ end
 EEG = pop_fourieeg( EEG,  1:28, [] , 'chanArray',  1:28, 'EndFrequency',  150, 'IncludeLegend',  1, 'NumberOfPointsFFT',  512, 'StartFrequency',...
   0, 'Window', [ 0 3.8052e+06] );
 
-% Linear de-trend
-%EEG = pop_eeglindetrend( EEG, 'pre' );
+
 
 %% Create simple eventlist
 EEG  = pop_creabasiceventlist( EEG , 'AlphanumericCleaning', 'on', 'BoundaryNumeric', { -99 }, 'BoundaryString', { 'boundary' }, 'Eventlist',...
@@ -90,7 +90,14 @@ end
 
 %% Binlister
 
-which_binStructure = 'binsStructure.txt';
+%EEG = pop_loadset( 'LAT_101_chan_chanOps_elist.set' );
+
+% BIN STRUCTURES LEGEND
+% bin_structure1.txt = 12 bins; cue + target L/R/C + distr L/R/C
+% bin_structure2.txt = 6 bins; cue + target C/Latt + distr C/Latt
+% bin_structure3.txt = 6 bins; as 2 but only correct responses.
+
+which_binStructure = 'bin_structure2.txt';
 
 EEG  = pop_binlister( EEG , 'BDF', which_binStructure, 'ExportEL',...
  [subject_list{s} '_elist_binned.txt'], 'IndexEL',  1, 'SendEL2', 'EEG&Text', 'UpdateEEG', 'on', 'Voutput',...
@@ -134,7 +141,7 @@ EEG  = pop_artstep( EEG , 'Channel',  29:31, 'Flag', [ 1 3], 'Threshold',  slth,
 EEG = pop_summary_AR_eeg_detection(EEG, [subject_list{s}, '_AR_details.txt']);
 
 % Sync markers
-EEG = pop_syncroartifacts(EEG, 3);
+%EEG = pop_syncroartifacts(EEG, 3);
 
 % save file
 EEG = saveMyEEG(EEG, 'ar');

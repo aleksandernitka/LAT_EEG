@@ -1,0 +1,47 @@
+bin 1
+NEUTRAL cue, Target LEFT, Distractor CENTER
+{20}{30}.{101}{110}
+
+bin 2
+NEUTRAL cue, Target RIGHT, Distractor CENTER
+{20}{30}.{101}{111}
+
+bin 3
+NEUTRAL cue, Target CENTER, Distractor LEFT
+{20}{30}.{100}{110}
+
+bin 4
+NEUTRAL cue, Target CENTER, Distractor RIGHT
+{20}{30}.{100}{111}
+
+bin 5
+POSITIVE cue, Target LEFT, Distractor CENTER
+{22}{30}.{101}{110}
+
+bin 6
+POSITIVE cue, Target RIGHT, Distractor CENTER
+{22}{30}.{101}{111}
+
+bin 7
+POSITIVE cue, Target CENTER, Distractor LEFT
+{22}{30}.{100}{110}
+
+bin 8
+POSITIVE cue, Target CENTER, Distractor RIGHT
+{22}{30}.{100}{111}
+
+bin 9
+NEGATIVE cue, Target LEFT, Distractor CENTER
+{21}{30}.{101}{110}
+
+bin 10
+NEGATIVE cue, Target RIGHT, Distractor CENTER
+{21}{30}.{101}{111}
+
+bin 11
+NEGATIVE cue, Target CENTER, Distractor LEFT
+{21}{30}.{100}{110}
+
+bin 12
+NEGATIVE cue, Target CENTER, Distractor RIGHT
+{21}{30}.{100}{111}
