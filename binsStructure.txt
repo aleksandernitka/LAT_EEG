@@ -1,0 +1,35 @@
+bin 1
+Neutral Cue,  target on midline
+{t<800-1500>20}.{127-132}
+
+bin 2
+Neutral Cue, target on the right
+{t<800-1500>20}.{133-138}
+
+bin 3
+Neutral Cue, target on the left
+{t<800-1500>20}.{121-126}
+
+bin 4
+Positive Cue,  target on midline
+{t<800-1500>22}.{127-132}
+
+bin 5
+Positive Cue, target on the right
+{t<800-1500>22}.{133-138}
+
+bin 6
+Positive Cue, target on the left
+{t<800-1500>22}.{121-126}
+
+bin 7
+Negative Cue,  target on midline
+{t<800-1500>21}.{127-132}
+
+bin 8
+Negative Cue, target on the right
+{t<800-1500>21}.{133-138}
+
+bin 9
+Negative Cue, target on the left
+{t<800-1500>21}.{121-126}
