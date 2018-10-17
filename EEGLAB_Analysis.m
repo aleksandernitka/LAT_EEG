@@ -4,6 +4,10 @@ clc;
 
 os = 'mac';
 run_gui = false; % will open the gui and redraw after each step
+run_ica = true; % will run ICA, note that addittional toolbox may be required
+                % see ICA section below.
+                
+rejectICA = false; % need to find out more about it
 
 eeglab; % helps with loading files from BV
 %% Setup file locations
@@ -74,7 +78,44 @@ end
 EEG = pop_fourieeg( EEG,  1:28, [] , 'chanArray',  1:28, 'EndFrequency',  150, 'IncludeLegend',  1, 'NumberOfPointsFFT',  512, 'StartFrequency',...
   0, 'Window', [ 0 3.8052e+06] );
 
+% Plot raw data, pre-filtered
+pop_eegplot( EEG, 1, 1, 1);
 
+% high pass filter to remove drift, 1hz
+EEG = pop_eegfiltnew(EEG, 'locutoff',1,'plotfreqz',1);
+
+% Plot raw data, post filter
+pop_eegplot( EEG, 1, 1, 1);
+
+% save file
+EEG = saveMyEEG(EEG, 'filt');
+
+%% Run ICA
+% fastICA requires the fastica toolbox from http://research.ics.aalto.fi/ica/fastica/
+% fastICA is fast, runICA is very slow (hours), other methods has not been
+% explored, but the binICA should be 1.5x faster than the runICA
+
+if runICA == true
+    % EEG = pop_runica(EEG); % GUI propt for ICA
+    EEG = pop_runica(EEG, 'icatype', 'fastica', 'chanind', 1:32);
+    
+    % 2D plot of components 1:24
+    pop_topoplot(EEG,0, [1:24] ,'LAT_101_chan',[5 5] ,0,'electrodes','on');
+    
+    % 3D plot of components 1:24
+    EEG = pop_headplot(EEG, 0, [1:24] , 'Components of dataset: LAT_101_chan', [5  5], 'setup',{'LAT_101_chan.spl' 'meshfile' 'mheadnew.mat' 'transform' [-0.35579 -6.3369 12.3705 0.053324 0.018746 -1.5526 1.0637 0.98772 0.93269] });
+    EEG = eeg_checkset( EEG );
+    
+    % Save it
+    EEG = saveMyEEG(EEG, 'fastICA');
+    
+end
+
+%% Reject ICA artefacts
+
+if runICA == true && rejectICA == true
+    
+end
 
 %% Create simple eventlist
 EEG  = pop_creabasiceventlist( EEG , 'AlphanumericCleaning', 'on', 'BoundaryNumeric', { -99 }, 'BoundaryString', { 'boundary' }, 'Eventlist',...
@@ -154,11 +195,25 @@ end
 
 %% ERP creation
 
-% ERP = pop_averager( EEG , 'Criterion', 'good', 'ExcludeBoundary', 'on', 'SEM', 'on' );
-% 
-% % Save ERP
-% ERP = pop_savemyerp(ERP, 'erpname', 'erp_101', 'filename',...
-% [ 'erp_', subject_list{s}, '.erp'], 'filepath', 'C:\Users\aln318\Documents\MATLAB', 'Warning', 'on');
-% 
-% ERP = pop_averager( EEG , 'Compute', 'EFFT', 'Criterion',...
-%  'good', 'ExcludeBoundary', 'on', 'SEM', 'on', 'TaperWindow', {'hanning' [ -200 798]} );
+% average without rejected trials
+ERP = pop_averager( EEG , 'Criterion', 'good', 'ExcludeBoundary', 'on', 'SEM', 'on' );
+% save erp as file
+ERP = pop_savemyerp(ERP, 'erpname', '101', 'filename',...
+ [subject_list{s}, '_erp.erp'], 'Warning', 'on');
+
+%% Low-Pass filter the ERP
+% we will use the filtered ERP for better plotting
+ERP = pop_filterp( ERP,  1:34 , 'Cutoff',  30, 'Design', 'butter', 'Filter', 'lowpass', 'Order',  2 );
+
+% save erp as file
+ERP = pop_savemyerp(ERP, 'erpname', '101', 'filename',...
+ [subject_list{s}, '_erp_filt.erp'], 'Warning', 'on');
+
+%% Plot the ERP
+plot_bins = [5 6];
+plot_chans = 15:24;
+
+ERP = pop_ploterps( ERP, plot_bins,  plot_chans , 'AutoYlim', 'on', 'Axsize', [ 0.05 0.08], 'BinNum', 'on', 'Blc', 'pre', 'Box', [ 5 2], 'ChLabel',...
+ 'on', 'FontSizeChan',  10, 'FontSizeLeg',  12, 'FontSizeTicks',  10, 'LegPos', 'bottom', 'Linespec', {'k-' , 'r-' }, 'LineWidth',  1, 'Maximize',...
+ 'on', 'Position', [ 59.25 8.33333 106.875 31.9444], 'Style', 'Classic', 'Tag', 'ERP_figure', 'Transparency',  0, 'xscale',...
+ [ -100.0 400.0   -100:100:400 ], 'YDir', 'normal' );
