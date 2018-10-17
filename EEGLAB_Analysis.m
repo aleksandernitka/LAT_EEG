@@ -10,7 +10,7 @@ subject_list = {'LAT_101'};
 nsubj = length(subject_list); % number of subjects
 
 if os == 'mac'
-    home_path  = '/Users/aleksandernitka/Downloads/EEG_101/';
+    home_path  = '/Users/aleksandernitka/Documents/GitHub/LAT_EEG';
     montage = '/Users/aleksandernitka/Documents/MATLAB/eeglab14_1_2b/plugins/dipfit2.3/standard_BESA/standard-10-5-cap385.elp';
 else
     home_path = 'C:\Users\aln318\Documents\MATLAB\';
