@@ -4,14 +4,15 @@ clc;
 
 os = 'mac';
 run_gui = false; % will open the gui and redraw after each step
-run_ica = true; % will run ICA, note that addittional toolbox may be required
+runICA = false; % will run ICA, note that addittional toolbox may be required
                 % see ICA section below.
                 
 rejectICA = false; % need to find out more about it
+make_ERP = false;
 
 eeglab; % helps with loading files from BV
 %% Setup file locations
-subject_list = {'LAT_101'};
+subject_list = {'LAT_1'};
 nsubj = length(subject_list); % number of subjects
 
 if os == 'mac'
@@ -62,8 +63,7 @@ EEG = pop_eegchanoperator( EEG, {  'nch1 = ch1 - ( ch32 *.5 ) Label Fp1',  'nch2
   'nch21 = ch21 - ( ch32 *.5 ) Label PO7',  'nch22 = ch22 - ( ch32 *.5 ) Label PO8',  'nch23 = ch23 - ( ch32 *.5 ) Label O1',...
   'nch24 = ch24 - ( ch32 *.5 ) Label O2',  'nch25 = ch25 - ( ch32 *.5 ) Label Fz',  'nch26 = ch26 - ( ch32 *.5 ) Label Cz',  'nch27 = ch27 - ( ch32 *.5 ) Label Pz',...
   'nch28 = ch28 - ( ch32 *.5 ) Label Oz',  'nch29 = ch29 - ( ch32 *.5 ) Label LHEOG',  'nch30 = ch30 - ( ch32 *.5 ) Label RHEOG',...
-  'nch31 = ch31 - ( ch32 *.5 ) Label VEOG',  'nch32 = ch32 - ( ch32 *.5 ) Label LM' ...
-  'nch33 = (ch21 + ch19 + ch23)/3 Label OAVG1', 'nch34 = (ch22 + ch20 + ch24)/3 Label OAVG2'} , 'ErrorMsg', 'popup', 'Warning',...
+  'nch31 = ch31 - ( ch32 *.5 ) Label VEOG',  'nch32 = ch32 Label LM' } , 'ErrorMsg', 'popup', 'Warning',...
  'on' );
 
 % save file
@@ -79,43 +79,17 @@ EEG = pop_fourieeg( EEG,  1:28, [] , 'chanArray',  1:28, 'EndFrequency',  150, '
   0, 'Window', [ 0 3.8052e+06] );
 
 % Plot raw data, pre-filtered
-pop_eegplot( EEG, 1, 1, 1);
+%pop_eegplot( EEG, 1, 1, 1);
 
 % high pass filter to remove drift, 1hz
 EEG = pop_eegfiltnew(EEG, 'locutoff',1,'plotfreqz',1);
 
 % Plot raw data, post filter
-pop_eegplot( EEG, 1, 1, 1);
+%pop_eegplot( EEG, 1, 1, 1);
 
 % save file
 EEG = saveMyEEG(EEG, 'filt');
 
-%% Run ICA
-% fastICA requires the fastica toolbox from http://research.ics.aalto.fi/ica/fastica/
-% fastICA is fast, runICA is very slow (hours), other methods has not been
-% explored, but the binICA should be 1.5x faster than the runICA
-
-if runICA == true
-    % EEG = pop_runica(EEG); % GUI propt for ICA
-    EEG = pop_runica(EEG, 'icatype', 'fastica', 'chanind', 1:32);
-    
-    % 2D plot of components 1:24
-    pop_topoplot(EEG,0, [1:24] ,'LAT_101_chan',[5 5] ,0,'electrodes','on');
-    
-    % 3D plot of components 1:24
-    EEG = pop_headplot(EEG, 0, [1:24] , 'Components of dataset: LAT_101_chan', [5  5], 'setup',{'LAT_101_chan.spl' 'meshfile' 'mheadnew.mat' 'transform' [-0.35579 -6.3369 12.3705 0.053324 0.018746 -1.5526 1.0637 0.98772 0.93269] });
-    EEG = eeg_checkset( EEG );
-    
-    % Save it
-    EEG = saveMyEEG(EEG, 'fastICA');
-    
-end
-
-%% Reject ICA artefacts
-
-if runICA == true && rejectICA == true
-    
-end
 
 %% Create simple eventlist
 EEG  = pop_creabasiceventlist( EEG , 'AlphanumericCleaning', 'on', 'BoundaryNumeric', { -99 }, 'BoundaryString', { 'boundary' }, 'Eventlist',...
@@ -138,7 +112,7 @@ end
 % bin_structure2.txt = 6 bins; cue + target C/Latt + distr C/Latt
 % bin_structure3.txt = 6 bins; as 2 but only correct responses.
 
-which_binStructure = 'bin_structure2.txt';
+which_binStructure = 'bin_structure1.txt';
 
 EEG  = pop_binlister( EEG , 'BDF', which_binStructure, 'ExportEL',...
  [subject_list{s} '_elist_binned.txt'], 'IndexEL',  1, 'SendEL2', 'EEG&Text', 'UpdateEEG', 'on', 'Voutput',...
@@ -165,14 +139,17 @@ end
 
 %% ArtRej
 
+% To reset the flags:
+%EEG  = pop_resetrej( EEG , 'ArtifactFlag',  1:8, 'ResetArtifactFields', 'on', 'UserFlag',  1:8 );
+
 %Moving Window peak-to-peak (EOG only) = FLAG 2
-p2pth = 100 % Voltage threshold
+p2pth = 120 % Voltage threshold
 EEG  = pop_artmwppth( EEG , 'Channel',  29:31, 'Flag', [ 1 2], 'Threshold',  p2pth, 'Twindow', [ -200 798], 'Windowsize',  200, 'Windowstep',...
   100 );
 
 
 % Step-like (EOG only) = FLAG 3
-slth = 15 % Voltage step threshold
+slth = 50 % Voltage step threshold
 winstep = 20 % window step size in ms
 EEG  = pop_artstep( EEG , 'Channel',  29:31, 'Flag', [ 1 3], 'Threshold',  slth, 'Twindow', [ -200 798], 'Windowsize',  200, 'Windowstep',...
   winstep );
@@ -181,7 +158,7 @@ EEG  = pop_artstep( EEG , 'Channel',  29:31, 'Flag', [ 1 3], 'Threshold',  slth,
 [EEG, tprej, acce, rej, histoflags ] = pop_summary_AR_eeg_detection(EEG,'none');
 EEG = pop_summary_AR_eeg_detection(EEG, [subject_list{s}, '_AR_details.txt']);
 
-% Sync markers
+% Sync markers to EEGLAB structure, doesnt always work
 %EEG = pop_syncroartifacts(EEG, 3);
 
 % save file
@@ -192,28 +169,65 @@ if run_gui == true
     erplab redraw;
 end
 
+%% Run ICA
+% fastICA requires the fastica toolbox from http://research.ics.aalto.fi/ica/fastica/
+% fastICA is fast, runICA is very slow (hours), other methods has not been
+% explored, but the binICA should be 1.5x faster than the runICA
+
+if runICA == true
+    % EEG = pop_runica(EEG); % GUI propt for ICA
+    EEG = pop_runica(EEG, 'icatype', 'fastica', 'chanind', 1:31);
+    
+    % 2D plot of components 1:24
+    pop_topoplot(EEG,0, [1:24] ,'LAT_101_chan',[5 5] ,0,'electrodes','on');
+    
+    % 3D plot of components 1:24
+    EEG = pop_headplot(EEG, 0, [1:24] , 'Components of dataset: LAT_101_chan', [5  5], 'setup',{'LAT_101_chan.spl' 'meshfile' 'mheadnew.mat' 'transform' [-0.35579 -6.3369 12.3705 0.053324 0.018746 -1.5526 1.0637 0.98772 0.93269] });
+    EEG = eeg_checkset( EEG );
+    
+    % Plot component traces
+    pop_eegplot( EEG, 0, 1, 1);
+    
+    % Save it
+    EEG = saveMyEEG(EEG, 'fastICA');
+    
+end
+
+%% Reject ICA artefacts
+
+if runICA == true && rejectICA == true
+    
+end
 
 %% ERP creation
 
-% average without rejected trials
-ERP = pop_averager( EEG , 'Criterion', 'good', 'ExcludeBoundary', 'on', 'SEM', 'on' );
-% save erp as file
-ERP = pop_savemyerp(ERP, 'erpname', '101', 'filename',...
- [subject_list{s}, '_erp.erp'], 'Warning', 'on');
-
-%% Low-Pass filter the ERP
-% we will use the filtered ERP for better plotting
-ERP = pop_filterp( ERP,  1:34 , 'Cutoff',  30, 'Design', 'butter', 'Filter', 'lowpass', 'Order',  2 );
-
-% save erp as file
-ERP = pop_savemyerp(ERP, 'erpname', '101', 'filename',...
- [subject_list{s}, '_erp_filt.erp'], 'Warning', 'on');
-
-%% Plot the ERP
-plot_bins = [5 6];
-plot_chans = 15:24;
-
-ERP = pop_ploterps( ERP, plot_bins,  plot_chans , 'AutoYlim', 'on', 'Axsize', [ 0.05 0.08], 'BinNum', 'on', 'Blc', 'pre', 'Box', [ 5 2], 'ChLabel',...
- 'on', 'FontSizeChan',  10, 'FontSizeLeg',  12, 'FontSizeTicks',  10, 'LegPos', 'bottom', 'Linespec', {'k-' , 'r-' }, 'LineWidth',  1, 'Maximize',...
- 'on', 'Position', [ 59.25 8.33333 106.875 31.9444], 'Style', 'Classic', 'Tag', 'ERP_figure', 'Transparency',  0, 'xscale',...
- [ -100.0 400.0   -100:100:400 ], 'YDir', 'normal' );
+if make_ERP == true
+    
+    % Filer 60Hz low pass
+    EEG  = pop_basicfilter( EEG,  1:32 , 'Cutoff',  60, 'Design', 'butter', 'Filter', 'lowpass', 'Order',  2 );
+    
+    % average without rejected trials
+    ERP = pop_averager( EEG , 'Criterion', 'good', 'ExcludeBoundary', 'on', 'SEM', 'on' );
+    
+    % save erp as file
+    ERP = pop_savemyerp(ERP, 'erpname', '1', 'filename',...
+        [subject_list{s}, '_filt_erp.erp'], 'Warning', 'on');
+    
+    
+    
+    % PLOT
+    % [5 6] - cue + target L/R
+    % [11 12]- cue - distr L/R
+    plotBins = [5 6]
+    
+    ERP = pop_ploterps( ERP, plotBins,  15:24 , 'AutoYlim', 'on', 'Axsize', [ 0.05 0.08], 'BinNum', 'on', 'Blc', 'pre', 'Box', [ 5 2], 'ChLabel',...
+        'on', 'FontSizeChan',  10, 'FontSizeLeg',  12, 'FontSizeTicks',  10, 'LegPos', 'bottom', 'Linespec', {'k-' , 'r-' }, 'LineWidth',  1, 'Maximize',...
+        'on', 'Position', [ 98.6429 23.4048 106.857 31.9286], 'SEM', 'on', 'Style', 'Classic', 'Tag', 'ERP_figure', 'Transparency',  0.7,...
+        'xscale', [ -200.0 450.0   -200:200:600 ], 'YDir', 'normal' );
+    
+    ERP = pop_ploterps( ERP, [ 5 6 11 12],  15:24 , 'AutoYlim', 'on', 'Axsize', [ 0.05 0.08], 'BinNum', 'on', 'Blc', 'pre', 'Box', [ 5 2], 'ChLabel',...
+ 'on', 'FontSizeChan',  10, 'FontSizeLeg',  12, 'FontSizeTicks',  10, 'LegPos', 'bottom', 'Linespec', {'k-' , 'r-' , 'b-' , 'g-' },...
+ 'LineWidth',  1, 'Maximize', 'on', 'Position', [ 98.6429 23.4048 106.857 31.9286], 'SEM', 'on', 'Style', 'Classic', 'Tag', 'ERP_figure',...
+ 'Transparency',  0.8, 'xscale', [ -200.0 450.0   -200:100:400 ], 'YDir', 'normal' );
+    
+end
