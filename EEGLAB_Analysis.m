@@ -5,16 +5,6 @@ clc;
 %% Options
 os = 'mac';
 
-run_gui = true; % will open the gui and redraw after each step
-runICA = false; % will run ICA, note that addittional toolbox may be require
-rejectICA = false; % need to find out more about it
-make_ERP = true;
-saveERP2PDF = true;
-import_data = true; % will import RAW EEG files not .set
-save_files = true; % will save auto
-s = 1; % subject enumerator, will feed from loop later
-
-%eeglab; % helps with loading files from BV
 
 %% Setup file locations
 subject_list = {'LAT_1','LAT_101'};
@@ -29,12 +19,10 @@ if os == 'mac'
     home_path  = '/Users/aleksandernitka/Documents/GitHub/LAT_EEG';
     raw_data_path  = [home_path , '/RAW/'];
     processed_data_path = [home_path, '/ERP/'];
-    montage = '/Users/aleksandernitka/Documents/MATLAB/eeglab14_1_2b/plugins/dipfit2.3/standard_BESA/standard-10-5-cap385.elp';
 else
     home_path = 'C:\Users\aln318\Documents\MATLAB\';
     raw_data_path  = [home_path , '\RAW\'];
     processed_data_path = [home_path, '\ERP\'];
-    montage = 'C:\Users\aln318\Documents\MATLAB\eeglab14_1_2b\plugins\dipfit2.3\standard_BESA\standard-10-5-cap385.elp';
 end
 
 %% Import data and save as set
@@ -54,9 +42,9 @@ end
 
 %% Set AR parameters for subjects
 % Moving Window peak-to-peak
-p2p_thrs = [100 100];
+p2p_thrs = [80 80];
 % Step-like
-sl_thrs = [15 15];
+sl_thrs = [20 20];
 sl_step = [20 20];
 
 
@@ -64,11 +52,15 @@ sl_step = [20 20];
 
 for s = 1:length(subject_list)
     
+    fprintf(['\n\n Processing ', subject_list{s}, '\n\n']);
     
     %Load the EEG
     EEG = pop_loadset([subject_list{s} '.set'], processed_data_path);
     
     %% Pre-Process
+    
+    % Downsample
+    %EEG = pop_resample( EEG, 250);
     
     % Re-reference
     EEG = pop_eegchanoperator( EEG, {  'nch1 = ch1 - ( ch32 *.5 ) Label Fp1',  'nch2 = ch2 - ( ch32 *.5 ) Label Fp2',  'nch3 = ch3 - ( ch32 *.5 ) Label F3',...
@@ -84,10 +76,10 @@ for s = 1:length(subject_list)
         'on' );
     
     % high pass filter to remove drift, 1hz
-    EEG = pop_eegfiltnew(EEG, 'locutoff',1,'plotfreqz',0);
+    EEG = pop_eegfiltnew(EEG, 'locutoff', 1,'plotfreqz', 0);
     
     % Channel locations
-    EEG = pop_chanedit(EEG,'lookup', montage);
+    EEG = pop_chanedit(EEG, 'lookup','standard-10-5-cap385.elp');
     
     % Save file
     EEG = saveMyEEG(EEG, 'PrePro', processed_data_path);
@@ -141,46 +133,19 @@ for s = 1:length(subject_list)
 end
 
 
-%% Run ICA
-% fastICA requires the fastica toolbox from http://research.ics.aalto.fi/ica/fastica/
-% fastICA is fast, runICA is very slow (hours), other methods has not been
-% explored, but the binICA should be 1.5x faster than the runICA
+%% Make ERP
 
-if runICA == true
-    % EEG = pop_runica(EEG); % GUI propt for ICA
-    EEG = pop_runica(EEG, 'icatype', 'fastica', 'chanind', 1:31);
+for s = 1:length(subject_list)
     
-    % 2D plot of components 1:24
-    pop_topoplot(EEG,0, [1:24] ,'LAT_101_chan',[5 5] ,0,'electrodes','on');
-    
-    % 3D plot of components 1:24
-    EEG = pop_headplot(EEG, 0, [1:24] , 'Components of dataset: LAT_101_chan', [5  5], 'setup',{'LAT_101_chan.spl' 'meshfile' 'mheadnew.mat' 'transform' [-0.35579 -6.3369 12.3705 0.053324 0.018746 -1.5526 1.0637 0.98772 0.93269] });
-    EEG = eeg_checkset( EEG );
-    
-    % Plot component traces
-    pop_eegplot( EEG, 0, 1, 1);
-    
-    % Save it
-    EEG = saveMyEEG(EEG, 'fastICA');
-    
-end
-
-%% Reject ICA artefacts
-
-if runICA == true && rejectICA == true
-    
-end
-
-%% ERP creation
-
-if make_ERP == true
+    % Load data
+    EEG = pop_loadset([subject_list{s} '_PrePro_Binned_ar.set'], processed_data_path);
     
     % average without rejected trials
-    ERP = pop_averager( EEG , 'Criterion', 'good', 'ExcludeBoundary', 'on', 'SEM', 'on' );
+    ERP = pop_averager( EEG , 'Criterion', 'good', 'ExcludeBoundary', 'on', 'SEM', 'off' );
     
     % save erp as file
     ERP = pop_savemyerp(ERP, 'erpname', '1', 'filename',...
-        [subject_list{s}, '_erp.erp'], 'Warning', 'on');
+        [processed_data_path  subject_list{s}, '_erp.erp'], 'Warning', 'off');
     
     % BIN OPS - create ipsi/contra bins
     ERP = pop_binoperator( ERP, {  'prepareContraIpsi',...
@@ -221,30 +186,37 @@ if make_ERP == true
         'nbin18 = bin11 - bin12 label NEGATIVE_DISTR_LAT Contra-Ipsi'});
     
     % Remove ERP baseline
-    ERP = pop_blcerp( ERP , 'Baseline', 'pre', 'Saveas', 'on' );
+    ERP = pop_blcerp( ERP , 'Baseline', 'pre', 'Saveas', 'off' );
     
     % 60Hz low pass filter for the ERP
     ERP = pop_filterp( ERP,  1:32 , 'Cutoff',  60, 'Design', 'butter', 'Filter', 'lowpass', 'Order',  2 );
     
     % Save the ERP
     ERP = pop_savemyerp(ERP,...
-        'erpname', [subject_list{s} '_filter_binOps'], 'filename', [subject_list{s} '_filter_binOps.erp'], 'Warning', 'on');
+        'erpname', [subject_list{s} '_filter_binOps'], 'filename', [processed_data_path  subject_list{s} '_filter_binOps.erp'], 'Warning', 'off');
     
+    
+    %% Plot ERPs - subject level
     
     % Plot 1 - ERP Contra
-    ERP = pop_ploterps( ERP,  5:2:11,  15:2:23 , 'AutoYlim', 'on', 'Axsize', [ 0.05 0.08], 'BinNum', 'on', 'Blc', 'no', 'Box', [ 5 1], 'ChLabel',...
-        'on', 'FontSizeChan',  10, 'FontSizeLeg',  12, 'FontSizeTicks',  10, 'LegPos', 'bottom', 'Linespec', {'k-' , 'r-' , 'b-' , 'g-' }, 'LineWidth',...
-        1, 'Maximize', 'on', 'Position', [ 98.6429 23.4048 106.857 31.9286], 'Style', 'Classic', 'Tag', 'ERP_figure', 'Transparency',  0,...
-        'xscale', [ -100.0 450.0   -100:100:400 ], 'YDir', 'normal' );
+    ERP = pop_ploterps( ERP,  1:2:11,  15:2:23 , 'AutoYlim', 'on', 'Axsize', [ 0.05 0.08], 'BinNum', 'on', 'Blc', 'no', 'Box', [ 5 1], 'ChLabel',...
+        'on', 'FontSizeChan',  10, 'FontSizeLeg',  12, 'FontSizeTicks',  10, 'LegPos', 'bottom', 'Linespec', {'k-' , 'r-' , 'b-' , 'g-' , 'c-' ,...
+        'm-' }, 'LineWidth',  1, 'Maximize', 'on', 'Position', [ 98.6429 23.4048 106.857 31.9286], 'Style', 'Classic', 'Tag', 'ERP_figure', 'Transparency',...
+        0, 'xscale', [ -200.0 798.0   -200:200:600 ], 'YDir', 'normal' );
     
+    ERP = pop_exporterplabfigure( ERP, 'Filepath', processed_data_path ,'Format', 'pdf', 'Resolution',  300,...
+        'SaveMode', 'auto', 'Tag', {'ERP_figure'} );
+    
+    close all;
     % Plot 2 - ERP Differences (ipsi-contra)
     ERP = pop_ploterps( ERP,  13:18,  15:2:23 , 'AutoYlim', 'on', 'Axsize', [ 0.05 0.08], 'BinNum', 'on', 'Blc', 'no', 'Box', [ 5 1], 'ChLabel',...
         'on', 'FontSizeChan',  10, 'FontSizeLeg',  12, 'FontSizeTicks',  10, 'LegPos', 'bottom', 'Linespec', {'k-' , 'r-' , 'b-' , 'g-' , 'c-' ,...
         'm-' }, 'LineWidth',  1, 'Maximize', 'on', 'Position', [ 98.6429 23.4048 106.857 31.9286], 'Style', 'Classic', 'Tag', 'ERP_figure', 'Transparency',...
-        0, 'xscale', [ -100.0 450.0   -100:100:400 ], 'YDir', 'normal' );
+        0, 'xscale', [ -200.0 798.0   -100:100:400 ], 'YDir', 'normal' );
     
-    if (saveERP2PDF)
-        ERP = pop_exporterplabfigure( ERP, 'Format', 'pdf', 'Resolution',  300,...
-            'SaveMode', 'saveas', 'Tag', {'ERP_figure' 'Scalp_figure' } );
-    end
+    ERP = pop_exporterplabfigure( ERP, 'Filepath', processed_data_path ,'Format', 'pdf', 'Resolution',  300,...
+        'SaveMode', 'auto', 'Tag', {'ERP_figure'} );
+    close all;
+    
 end
+   
