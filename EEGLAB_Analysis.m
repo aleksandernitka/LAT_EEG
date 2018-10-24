@@ -7,7 +7,7 @@ os = 'mac';
 
 
 %% Setup file locations
-subject_list = {'LAT_1','LAT_101'};
+subject_list = {'LAT_101','LAT_1','LAT_2'};
 nsubj = length(subject_list); % number of subjects
 
 % Create dir for processed data
@@ -38,16 +38,6 @@ for s = 1:length(subject_list)
     fprintf(['\nSaved ', EEG.setname, '.set\n']);
 end
 
-
-
-%% Set AR parameters for subjects
-% Moving Window peak-to-peak
-p2p_thrs = [80 80];
-% Step-like
-sl_thrs = [20 20];
-sl_step = [20 20];
-
-
 %% Processing for each subject
 
 for s = 1:length(subject_list)
@@ -60,7 +50,8 @@ for s = 1:length(subject_list)
     %% Pre-Process
     
     % Downsample
-    %EEG = pop_resample( EEG, 250);
+    EEG = pop_resample( EEG, 250);
+    EEG.setname = subject_list{s};
     
     % Re-reference
     EEG = pop_eegchanoperator( EEG, {  'nch1 = ch1 - ( ch32 *.5 ) Label Fp1',  'nch2 = ch2 - ( ch32 *.5 ) Label Fp2',  'nch3 = ch3 - ( ch32 *.5 ) Label F3',...
@@ -82,7 +73,7 @@ for s = 1:length(subject_list)
     EEG = pop_chanedit(EEG, 'lookup','standard-10-5-cap385.elp');
     
     % Save file
-    EEG = saveMyEEG(EEG, 'PrePro', processed_data_path);
+    % EEG = saveMyEEG(EEG, 'PrePro', processed_data_path);
     
     %% EventList, Binlister & Epoch
     
@@ -107,18 +98,41 @@ for s = 1:length(subject_list)
     % Save data
     EEG = saveMyEEG(EEG, 'Binned', processed_data_path);
     
-    %% ArtRej
+end
 
+
+%% Artifact Rejection
+
+% Set AR parameters for subjects
+% Moving Window peak-to-peak
+p2p_thrs = [38 130 80];
+% Step-like
+sl_thrs = [40 40 40];
+sl_step = [20 20 20];
+
+for s = 1:length(subject_list)
+    
+    fprintf(['\n\n Processing ', subject_list{s}, '\n\n']);
+    
+    %Load the EEG
+    EEG = pop_loadset([subject_list{s} '_Binned.set'], processed_data_path);  
+    
     % To reset the flags:
     % EEG  = pop_resetrej( EEG , 'ArtifactFlag',  1:8, 'ResetArtifactFields', 'on', 'UserFlag',  1:8 );
     
-    % Moving Window peak-to-peak (EOG only) = FLAG 2
-    EEG  = pop_artmwppth( EEG , 'Channel',  29:31, 'Flag', [ 1 2], 'Threshold',  p2p_thrs(s), 'Twindow', [ -200 798], 'Windowsize',  200, 'Windowstep',...
+    % Moving Window peak-to-peak (EOG and fraontal electrodes only) = FLAG 2
+    thisP2Pth = p2p_thrs(s);
+    EEG  = pop_artmwppth( EEG , 'Channel',  [1:6 29:31], 'Flag', [ 1 2], 'Threshold',  thisP2Pth, 'Twindow', [ -200 798], 'Windowsize',  200, 'Windowstep',...
         100 );
+    pop_eegplot( EEG, 1, 1, 1);
     
     % Step-like (EOG only) = FLAG 3
-    EEG  = pop_artstep( EEG , 'Channel',  29:31, 'Flag', [ 1 3], 'Threshold',  sl_thrs(s), 'Twindow', [ -200 798], 'Windowsize',  200, 'Windowstep',...
-        sl_step(s) );
+    thisSLth = sl_thrs(s);
+    thisSLws = sl_step(s);
+    EEG  = pop_artstep( EEG , 'Channel',  29:31, 'Flag', [ 1 3], 'Threshold', thisSLth , 'Twindow', [ -200 798], 'Windowsize',  200, 'Windowstep',...
+        thisSLws);
+    
+    % pop_eegplot( EEG, 1, 1, 1);
     
     % AR Summary print and save to file
     [EEG, tprej, acce, rej, histoflags ] = pop_summary_AR_eeg_detection(EEG,'none');
@@ -132,13 +146,12 @@ for s = 1:length(subject_list)
     
 end
 
-
 %% Make ERP
 
 for s = 1:length(subject_list)
     
     % Load data
-    EEG = pop_loadset([subject_list{s} '_PrePro_Binned_ar.set'], processed_data_path);
+    EEG = pop_loadset([subject_list{s} '_Binned_ar.set'], processed_data_path);
     
     % average without rejected trials
     ERP = pop_averager( EEG , 'Criterion', 'good', 'ExcludeBoundary', 'on', 'SEM', 'off' );
@@ -219,4 +232,4 @@ for s = 1:length(subject_list)
     close all;
     
 end
-   
+
