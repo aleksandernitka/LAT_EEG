@@ -1,0 +1,3 @@
+/Users/aleksandernitka/Documents/GitHub/LAT_EEG/ERP/LAT_3_filter_binOps.erp  
+/Users/aleksandernitka/Documents/GitHub/LAT_EEG/ERP/LAT_2_filter_binOps.erp  
+/Users/aleksandernitka/Documents/GitHub/LAT_EEG/ERP/LAT_1_filter_binOps.erp  

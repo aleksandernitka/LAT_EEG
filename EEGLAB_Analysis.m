@@ -259,7 +259,7 @@ if (contructGrandMeans)
     %Construct mean ERP, see grandMeanList.txt for list of ERP sets used
     ERP = pop_gaverager( 'grandMeanList.txt' , 'ExcludeNullBin', 'on', 'SEM', 'on' );
     ERP = pop_savemyerp(ERP,...
-        'erpname', 'meanERP', 'filename', 'meanERP.erp', 'filepath', 'ERP', 'Warning', 'on');
+        'erpname', 'meanERP', 'filename', 'meanERP.erp', 'filepath', 'ERP', 'Warning', 'off');
     
     % Load the ERP
     ERP = pop_loaderp( 'filename', 'meanERP.erp', 'filepath', 'ERP/' );
