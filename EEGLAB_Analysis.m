@@ -5,9 +5,16 @@ clc;
 %% Options
 os = 'mac';
 
+% Determine which steps of the analysis to run/re-run
+importRawData = false;
+preprocessData = false;
+runAR = false;
+createParticERPs = false;
+contructGrandMeans = true;
+
 
 %% Setup file locations
-subject_list = {'LAT_101','LAT_1','LAT_2'};
+subject_list = {'LAT_101','LAT_1','LAT_2', 'LAT_3'};
 nsubj = length(subject_list); % number of subjects
 
 % Create dir for processed data
@@ -27,19 +34,24 @@ end
 
 %% Import data and save as set
 
-for s = 1:length(subject_list)
+if (importRawData)
     
-    % import raw data
-    EEG = pop_loadbv([raw_data_path], [subject_list{s} '.vhdr']);
-    EEG.setname = subject_list{s};
+    for s = 1:length(subject_list)
+        
+        % import raw data
+        EEG = pop_loadbv([raw_data_path], [subject_list{s} '.vhdr']);
+        EEG.setname = subject_list{s};
+        
+        % save file
+        EEG = pop_saveset(EEG, 'filename', [EEG.setname '.set'], 'filepath', processed_data_path);
+        fprintf(['\nSaved ', EEG.setname, '.set\n']);
+    end
     
-    % save file
-    EEG = pop_saveset(EEG, 'filename', [EEG.setname '.set'], 'filepath', processed_data_path);
-    fprintf(['\nSaved ', EEG.setname, '.set\n']);
 end
-
 %% Processing for each subject
 
+if (preprocessData)
+    
 for s = 1:length(subject_list)
     
     fprintf(['\n\n Processing ', subject_list{s}, '\n\n']);
@@ -100,22 +112,25 @@ for s = 1:length(subject_list)
     
 end
 
+end
 
 %% Artifact Rejection
 
+if (runAR)
+
 % Set AR parameters for subjects
 % Moving Window peak-to-peak
-p2p_thrs = [38 130 80];
+p2p_thrs = [80 130 80 80];
 % Step-like
-sl_thrs = [40 40 40];
-sl_step = [20 20 20];
+sl_thrs = [40 40 40 40];
+sl_step = [20 20 20 20];
 
 for s = 1:length(subject_list)
     
     fprintf(['\n\n Processing ', subject_list{s}, '\n\n']);
     
     %Load the EEG
-    EEG = pop_loadset([subject_list{s} '_Binned.set'], processed_data_path);  
+    EEG = pop_loadset([subject_list{s} '_Binned.set'], processed_data_path);
     
     % To reset the flags:
     % EEG  = pop_resetrej( EEG , 'ArtifactFlag',  1:8, 'ResetArtifactFields', 'on', 'UserFlag',  1:8 );
@@ -146,7 +161,10 @@ for s = 1:length(subject_list)
     
 end
 
+end
 %% Make ERP
+
+if (createParticERPs)
 
 for s = 1:length(subject_list)
     
@@ -233,3 +251,36 @@ for s = 1:length(subject_list)
     
 end
 
+end
+
+%% GRAND MEANS
+if (contructGrandMeans)
+    
+    %Construct mean ERP, see grandMeanList.txt for list of ERP sets used
+    ERP = pop_gaverager( 'grandMeanList.txt' , 'ExcludeNullBin', 'on', 'SEM', 'on' );
+    ERP = pop_savemyerp(ERP,...
+        'erpname', 'meanERP', 'filename', 'meanERP.erp', 'filepath', 'ERP', 'Warning', 'on');
+    
+    % Load the ERP
+    ERP = pop_loaderp( 'filename', 'meanERP.erp', 'filepath', 'ERP/' );
+    
+    % Plot 1 - ERP Contra
+    ERP = pop_ploterps( ERP,  1:2:11,  15:2:23 , 'AutoYlim', 'on', 'Axsize', [ 0.05 0.08], 'BinNum', 'on', 'Blc', 'no', 'Box', [ 5 1], 'ChLabel',...
+        'on', 'FontSizeChan',  10, 'FontSizeLeg',  12, 'FontSizeTicks',  10, 'LegPos', 'bottom', 'Linespec', {'k-' , 'r-' , 'b-' , 'g-' , 'c-' ,...
+        'm-' }, 'LineWidth',  1, 'Maximize', 'on', 'Position', [ 98.6429 23.4048 106.857 31.9286], 'Style', 'Classic', 'Tag', 'ERP_figure', 'Transparency',...
+        0, 'xscale', [ -200.0 798.0   -200:200:600 ], 'YDir', 'normal' );
+    
+    ERP = pop_exporterplabfigure( ERP, 'Filepath', processed_data_path ,'Format', 'pdf', 'Resolution',  300,...
+        'SaveMode', 'auto', 'Tag', {'ERP_figure'} );
+    
+    close all;
+    % Plot 2 - ERP Differences (ipsi-contra)
+    ERP = pop_ploterps( ERP,  13:18,  15:2:23 , 'AutoYlim', 'on', 'Axsize', [ 0.05 0.08], 'BinNum', 'on', 'Blc', 'no', 'Box', [ 5 1], 'ChLabel',...
+        'on', 'FontSizeChan',  10, 'FontSizeLeg',  12, 'FontSizeTicks',  10, 'LegPos', 'bottom', 'Linespec', {'k-' , 'r-' , 'b-' , 'g-' , 'c-' ,...
+        'm-' }, 'LineWidth',  1, 'Maximize', 'on', 'Position', [ 98.6429 23.4048 106.857 31.9286], 'Style', 'Classic', 'Tag', 'ERP_figure', 'Transparency',...
+        0, 'xscale', [ -200.0 798.0   -100:100:400 ], 'YDir', 'normal' );
+    
+    ERP = pop_exporterplabfigure( ERP, 'Filepath', processed_data_path ,'Format', 'pdf', 'Resolution',  300,...
+        'SaveMode', 'auto', 'Tag', {'ERP_figure'} );
+    close all;
+end
