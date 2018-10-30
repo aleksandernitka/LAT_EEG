@@ -1,4 +1,4 @@
-function[ERP] = plotMyERP(ERP, ERPname, bins, hold, save, processed_data_path)
+function[ERP] = plotMyERP(ERP, bins, hold, save, processed_data_path)
 
 ERP = pop_ploterps( ERP, bins,  15:2:23 , 'AutoYlim', 'on', 'Axsize', [ 0.05 0.08], 'BinNum', 'on', 'Blc', 'pre', 'Box', [ 6 1], 'ChLabel',...
     'on', 'FontSizeChan',  10, 'FontSizeLeg',  12, 'FontSizeTicks',  10, 'LegPos', 'bottom', 'Linespec', {'k-' , 'r-' }, 'LineWidth',  1,...
@@ -6,10 +6,8 @@ ERP = pop_ploterps( ERP, bins,  15:2:23 , 'AutoYlim', 'on', 'Axsize', [ 0.05 0.0
     [ -100.0 600.0   -200:200:600 ], 'YDir', 'normal' );
 
 
-ERP.erpname = ['ERP_' ERPname]
-
 if save == true
-    if nargin < 6
+    if nargin < 5
         
         ERP = pop_exporterplabfigure( ERP, 'Format', 'pdf', 'Resolution',  300,...
             'SaveMode', 'auto', 'Tag', {'ERP_figure'} );
@@ -24,6 +22,5 @@ end
 if hold ~= true
     close all;
 end
-
 
 end
