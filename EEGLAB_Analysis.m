@@ -6,32 +6,34 @@ clc;
 os = 'mac';
 
 % Determine which steps of the analysis to run/re-run
-importRawData = false;
-preprocessData = false;
-runAR = false;
+importRawData = true;
+preprocessData = true;
+runAR = true;
 createParticERPs = false;
+plotPaarticERP = true;
 contructGrandMeans = true;
 plotGrandMeans = true;
 
 
 %% Setup file locations
-subject_list = {'LAT_101','LAT_1','LAT_2', 'LAT_3'};
+subject_list = {'LAT_1','LAT_2', 'LAT_3', 'LAT_4', 'LAT_5', 'LAT_6'};
 nsubj = length(subject_list); % number of subjects
 
 % Create dir for processed data and plots
-if ~exist('ERP', 'dir')
-    mkdir('ERP');
-end
-
-if ~exist('PLT', 'dir')
-    mkdir('PLT');
-end
+% if ~exist('ERP', 'dir')
+%     mkdir('ERP');
+% end
+%
+% if ~exist('PLT', 'dir')
+%     mkdir('PLT');
+% end
 
 if os == 'mac'
-    home_path  = '/Users/aleksandernitka/Documents/GitHub/LAT_EEG';
-    raw_data_path  = [home_path , '/RAW/'];
-    processed_data_path = [home_path, '/ERP/'];
-    plots_data_path = [home_path, '/PLT/'];
+    home_path = '/Users/aleksandernitka/Documents/GitHub/LAT_EEG';
+    file_path = '/Volumes/128gb/LAT_EEG';
+    raw_data_path  = [file_path , '/RAW/'];
+    processed_data_path = [file_path, '/ERP/'];
+    plots_data_path = [file_path, '/PLT/'];
 else
     home_path = 'C:\Users\aln318\Documents\MATLAB\';
     raw_data_path  = [home_path , '\RAW\'];
@@ -40,86 +42,26 @@ else
 end
 
 %% Import data and save as set
+% only import to *.set filetype
 
-if (importRawData)
-    
-    for s = 1:length(subject_list)
-        
-        % import raw data
-        EEG = pop_loadbv([raw_data_path], [subject_list{s} '.vhdr']);
-        EEG.setname = subject_list{s};
-        
-        % save file
-        EEG = pop_saveset(EEG, 'filename', [EEG.setname '.set'], 'filepath', processed_data_path);
-        fprintf(['\nSaved ', EEG.setname, '.set\n']);
-    end
-    
-end
+importList = {'LAT_4', 'LAT_5', 'LAT_6'};
+
+ImportVHDR2SET(importList, raw_data_path, processed_data_path);
+
 %% Processing for each subject
 
-if (preprocessData)
-    
-    for s = 1:length(subject_list)
-        
-        fprintf(['\n\n Processing ', subject_list{s}, '\n\n']);
-        
-        %Load the EEG
-        EEG = pop_loadset([subject_list{s} '.set'], processed_data_path);
-        
-        %% Pre-Process
-        
-        % Downsample
-        EEG = pop_resample( EEG, 250);
-        EEG.setname = subject_list{s};
-        
-        % Re-reference
-        EEG = pop_eegchanoperator( EEG, {  'nch1 = ch1 - ( ch32 *.5 ) Label Fp1',  'nch2 = ch2 - ( ch32 *.5 ) Label Fp2',  'nch3 = ch3 - ( ch32 *.5 ) Label F3',...
-            'nch4 = ch4 - ( ch32 *.5 ) Label F4',  'nch5 = ch5 - ( ch32 *.5 ) Label F7',  'nch6 = ch6 - ( ch32 *.5 ) Label F8',...
-            'nch7 = ch7 - ( ch32 *.5 ) Label FC5',  'nch8 = ch8 - ( ch32 *.5 ) Label FC6',  'nch9 = ch9 - ( ch32 *.5 ) Label C3',  'nch10 = ch10 - ( ch32 *.5 ) Label C4',...
-            'nch11 = ch11 - ( ch32 *.5 ) Label T7',  'nch12 = ch12 - ( ch32 *.5 ) Label T8',  'nch13 = ch13 - ( ch32 *.5 ) Label CP5',...
-            'nch14 = ch14 - ( ch32 *.5 ) Label CP6',  'nch15 = ch15 - ( ch32 *.5 ) Label P3',  'nch16 = ch16 - ( ch32 *.5 ) Label P4',  'nch17 = ch17 - ( ch32 *.5 ) Label P7',...
-            'nch18 = ch18 - ( ch32 *.5 ) Label P8',  'nch19 = ch19 - ( ch32 *.5 ) Label PO3',  'nch20 = ch20 - ( ch32 *.5 ) Label PO4',...
-            'nch21 = ch21 - ( ch32 *.5 ) Label PO7',  'nch22 = ch22 - ( ch32 *.5 ) Label PO8',  'nch23 = ch23 - ( ch32 *.5 ) Label O1',...
-            'nch24 = ch24 - ( ch32 *.5 ) Label O2',  'nch25 = ch25 - ( ch32 *.5 ) Label Fz',  'nch26 = ch26 - ( ch32 *.5 ) Label Cz',  'nch27 = ch27 - ( ch32 *.5 ) Label Pz',...
-            'nch28 = ch28 - ( ch32 *.5 ) Label Oz',  'nch29 = ch29 - ( ch32 *.5 ) Label LHEOG',  'nch30 = ch30 - ( ch32 *.5 ) Label RHEOG',...
-            'nch31 = ch31 - ( ch32 *.5 ) Label VEOG',  'nch32 = ch32 Label LM' } , 'ErrorMsg', 'popup', 'Warning',...
-            'on' );
-        
-        % high pass filter to remove drift, 1hz
-        EEG = pop_eegfiltnew(EEG, 'locutoff', 1,'plotfreqz', 0);
-        
-        % Channel locations
-        EEG = pop_chanedit(EEG, 'lookup','standard-10-5-cap385.elp');
-        
-        % Save file
-        % EEG = saveMyEEG(EEG, 'PrePro', processed_data_path);
-        
-        %% EventList, Binlister & Epoch
-        
-        EEG  = pop_creabasiceventlist( EEG , 'AlphanumericCleaning', 'on', 'BoundaryNumeric', { -99 }, 'BoundaryString', { 'boundary' }, 'Eventlist',...
-            [processed_data_path  subject_list{s} '_elist.txt']);
-        
-        % Binlister
-        % BIN STRUCTURES LEGEND
-        % bin_structure1.txt = 12 bins; cue + target L/R/C + distr L/R/C
-        % bin_structure2.txt = 6 bins; cue + target C/Latt + distr C/Latt
-        % bin_structure3.txt = 6 bins; as 2 but only correct responses.
-        
-        which_binStructure = 'bin_structure1.txt';
-        
-        EEG  = pop_binlister( EEG , 'BDF', which_binStructure, 'ExportEL',...
-            [processed_data_path subject_list{s} '_elist_binned.txt'], 'IndexEL',  1, 'SendEL2', 'EEG&Text', 'UpdateEEG', 'on', 'Voutput',...
-            'EEG' );
-        
-        % Epoching and base correction
-        EEG = pop_epochbin( EEG , [-200.0  800.0],  'pre');
-        
-        % Save data
-        EEG = saveMyEEG(EEG, 'Binned', processed_data_path);
-        
-    end
-    
-end
+preprocessList = {'LAT_4'};
+epochLen = [-200 800];
+binlisterFile = 'bin_structure1.txt';
+
+% BIN STRUCTURES LEGEND
+% bin_structure1.txt = 12 bins; cue + target L/R/C + distr L/R/C
+% bin_structure2.txt = 6 bins; cue + target C/Latt + distr C/Latt
+% bin_structure3.txt = 6 bins; as 2 but only correct responses.
+
+PreProcessEEG(preprocessList, processed_data_path, processed_data_path, binlisterFile, ...
+    epochLen, true);
+
 
 %% Artifact Rejection
 
@@ -146,7 +88,6 @@ if (runAR)
         thisP2Pth = p2p_thrs(s);
         EEG  = pop_artmwppth( EEG , 'Channel',  [1:6 29:31], 'Flag', [ 1 2], 'Threshold',  thisP2Pth, 'Twindow', [ -200 798], 'Windowsize',  200, 'Windowstep',...
             100 );
-        pop_eegplot( EEG, 1, 1, 1);
         
         % Step-like (EOG only) = FLAG 3
         thisSLth = sl_thrs(s);
@@ -154,7 +95,10 @@ if (runAR)
         EEG  = pop_artstep( EEG , 'Channel',  29:31, 'Flag', [ 1 3], 'Threshold', thisSLth , 'Twindow', [ -200 798], 'Windowsize',  200, 'Windowstep',...
             thisSLws);
         
-        % pop_eegplot( EEG, 1, 1, 1);
+        pop_eegplot( EEG, 1, 1, 1);
+        
+        fprintf(['\n\n Displaying raw data and AR markers for ', subject_list{s}, '\n\n PRESS ANY KEY TO CONTINUTE...']);
+        pause;
         
         % AR Summary print and save to file
         [EEG, tprej, acce, rej, histoflags ] = pop_summary_AR_eeg_detection(EEG,'none');
@@ -233,31 +177,35 @@ if (createParticERPs)
         ERP = pop_savemyerp(ERP,...
             'erpname', [subject_list{s} '_filter_binOps'], 'filename', [processed_data_path  subject_list{s} '_filter_binOps.erp'], 'Warning', 'off');
         
-        
-        %% Plot ERPs - subject level
-        
-        % Plot 1 - ERP Contra
-        ERP = pop_ploterps( ERP,  1:2:11,  15:2:23 , 'AutoYlim', 'on', 'Axsize', [ 0.05 0.08], 'BinNum', 'on', 'Blc', 'no', 'Box', [ 5 1], 'ChLabel',...
-            'on', 'FontSizeChan',  10, 'FontSizeLeg',  12, 'FontSizeTicks',  10, 'LegPos', 'bottom', 'Linespec', {'k-' , 'r-' , 'b-' , 'g-' , 'c-' ,...
-            'm-' }, 'LineWidth',  1, 'Maximize', 'on', 'Position', [ 98.6429 23.4048 106.857 31.9286], 'Style', 'Classic', 'Tag', 'ERP_figure', 'Transparency',...
-            0, 'xscale', [ -200.0 798.0   -200:200:600 ], 'YDir', 'normal' );
-        
-        ERP = pop_exporterplabfigure( ERP, 'Filepath', processed_data_path ,'Format', 'pdf', 'Resolution',  300,...
-            'SaveMode', 'auto', 'Tag', {'ERP_figure'} );
-        
-        close all;
-        % Plot 2 - ERP Differences (ipsi-contra)
-        ERP = pop_ploterps( ERP,  13:18,  15:2:23 , 'AutoYlim', 'on', 'Axsize', [ 0.05 0.08], 'BinNum', 'on', 'Blc', 'no', 'Box', [ 5 1], 'ChLabel',...
-            'on', 'FontSizeChan',  10, 'FontSizeLeg',  12, 'FontSizeTicks',  10, 'LegPos', 'bottom', 'Linespec', {'k-' , 'r-' , 'b-' , 'g-' , 'c-' ,...
-            'm-' }, 'LineWidth',  1, 'Maximize', 'on', 'Position', [ 98.6429 23.4048 106.857 31.9286], 'Style', 'Classic', 'Tag', 'ERP_figure', 'Transparency',...
-            0, 'xscale', [ -200.0 798.0   -100:100:400 ], 'YDir', 'normal' );
-        
-        ERP = pop_exporterplabfigure( ERP, 'Filepath', processed_data_path ,'Format', 'pdf', 'Resolution',  300,...
-            'SaveMode', 'auto', 'Tag', {'ERP_figure'} );
-        close all;
-        
     end
     
+end
+
+%% Plot ERPs - subject level
+
+if (plotPaarticERP)
+    
+    for s = 1:length(subject_list)
+        
+        ERP = pop_loaderp( 'filename', [subject_list{s} '_filter_binOps.erp'], 'filepath', 'ERP/' );
+        
+        Bins2Plot = {[1 2], [3 4], [5 6], [7 8], [9 10], [11 12]};
+        
+        Names2Plot = {...
+            'NEUTRAL_TARGET_LAT',...
+            'NEUTRAL_DISTR_LAT',...
+            'POSITIVE_TARGET_LAT',...
+            'POSITIVE_DISTR_LAT',...
+            'NEGATIVE_TARGET_LAT',...
+            'NEGATIVE_DISTR_LAT '};
+        
+        for n = 1:length(Bins2Plot)
+            ERP.erpname = [subject_list{s} '_' Names2Plot{n}];
+            plotMyERP(ERP, Bins2Plot{n}, false, true, plots_data_path);
+            ERP.erpname = 'meanERP';
+        end
+        
+    end
 end
 
 %% GRAND MEANS
@@ -299,7 +247,7 @@ if (plotGrandMeans)
     Names2Plot = {...
         'MeanERP_NEUTRAL_Diff',...
         'MeanERP_POSITIVE_Diff',...
-        'MeanERP_NEGATIVE_Diff'}
+        'MeanERP_NEGATIVE_Diff'};
     
     for s = 1:length(Bins2Plot)
         ERP.erpname = Names2Plot{s};
