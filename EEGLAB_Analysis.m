@@ -5,19 +5,8 @@ clc;
 %% Options
 os = 'mac';
 
-% Determine which steps of the analysis to run/re-run
-importRawData = true;
-preprocessData = true;
-runAR = true;
-createParticERPs = false;
-plotPaarticERP = true;
-contructGrandMeans = true;
-plotGrandMeans = true;
-
-
 %% Setup file locations
 subject_list = {'LAT_1','LAT_2', 'LAT_3', 'LAT_4', 'LAT_5', 'LAT_6'};
-nsubj = length(subject_list); % number of subjects
 
 % Create dir for processed data and plots
 % if ~exist('ERP', 'dir')
@@ -41,78 +30,54 @@ else
     plots_data_path = [home_path, '\PLT\'];
 end
 
-%% Import data and save as set
+%% Import data
 % only import to *.set filetype
 
-importList = {'LAT_4', 'LAT_5', 'LAT_6'};
+% Select raw files to import
+importList = {};
 
+% RUN the import module
 ImportVHDR2SET(importList, raw_data_path, processed_data_path);
 
-%% Processing for each subject
+%% Pre-processing for each subject
 
-preprocessList = {'LAT_4'};
+% Run only below subjects
+preprocessList = {};
+% Specify epoch duration 
 epochLen = [-200 800];
+% Selecte Bin lister file
 binlisterFile = 'bin_structure1.txt';
 
-% BIN STRUCTURES LEGEND
-% bin_structure1.txt = 12 bins; cue + target L/R/C + distr L/R/C
-% bin_structure2.txt = 6 bins; cue + target C/Latt + distr C/Latt
-% bin_structure3.txt = 6 bins; as 2 but only correct responses.
-
-PreProcessEEG(preprocessList, processed_data_path, processed_data_path, binlisterFile, ...
-    epochLen, true);
+% RUN the preprocessing module
+PreProcessEEG(preprocessList, processed_data_path, processed_data_path,... 
+    binlisterFile, epochLen, true);
 
 
 %% Artifact Rejection
 
-if (runAR)
-    
-    % Set AR parameters for subjects
-    % Moving Window peak-to-peak
-    p2p_thrs = [80 130 80 80];
-    % Step-like
-    sl_thrs = [40 40 40 40];
-    sl_step = [20 20 20 20];
-    
-    for s = 1:length(subject_list)
-        
-        fprintf(['\n\n Processing ', subject_list{s}, '\n\n']);
-        
-        %Load the EEG
-        EEG = pop_loadset([subject_list{s} '_Binned.set'], processed_data_path);
-        
-        % To reset the flags:
-        % EEG  = pop_resetrej( EEG , 'ArtifactFlag',  1:8, 'ResetArtifactFields', 'on', 'UserFlag',  1:8 );
-        
-        % Moving Window peak-to-peak (EOG and fraontal electrodes only) = FLAG 2
-        thisP2Pth = p2p_thrs(s);
-        EEG  = pop_artmwppth( EEG , 'Channel',  [1:6 29:31], 'Flag', [ 1 2], 'Threshold',  thisP2Pth, 'Twindow', [ -200 798], 'Windowsize',  200, 'Windowstep',...
-            100 );
-        
-        % Step-like (EOG only) = FLAG 3
-        thisSLth = sl_thrs(s);
-        thisSLws = sl_step(s);
-        EEG  = pop_artstep( EEG , 'Channel',  29:31, 'Flag', [ 1 3], 'Threshold', thisSLth , 'Twindow', [ -200 798], 'Windowsize',  200, 'Windowstep',...
-            thisSLws);
-        
-        pop_eegplot( EEG, 1, 1, 1);
-        
-        fprintf(['\n\n Displaying raw data and AR markers for ', subject_list{s}, '\n\n PRESS ANY KEY TO CONTINUTE...']);
-        pause;
-        
-        % AR Summary print and save to file
-        [EEG, tprej, acce, rej, histoflags ] = pop_summary_AR_eeg_detection(EEG,'none');
-        EEG = pop_summary_AR_eeg_detection(EEG, [processed_data_path subject_list{s}, '_AR_details.txt']);
-        
-        % Sync markers to EEGLAB structure, doesnt always work
-        %EEG = pop_syncroartifacts(EEG, 3);
-        
-        % save file
-        EEG = saveMyEEG(EEG, 'ar', processed_data_path);
-        
-    end
-    
-end
+%RUN peak-to-peak, args:
+% arProcessList - list of subjects to process
+% location_path - where the files are
+% save - save or not after the AR
+% save_path - where to save the files after AR
+% method - p2p or step
+% resetFlags - remove all AR markers
+% flagId - set flag ID for all AR
+% channels - what chans to run AR on
+% Twindow - trial window
+% windowSize - moving window size
+% threshold - voltage threshold 
+% plotRaw - show traces after AR, will pause the process
+
+arProcessList = {'LAT_1'};
+chans = [29:32];
+trialWin = [-200 780];
+windowSize = {100};
+threshold = {100};
+
+ArtRej(arProcessList, processed_data_path, true, processed_data_path,...
+    'p2p', false, 2, chans, trialWin, windowSize, threshold, true);
+
 %% Make ERP
 
 if (createParticERPs)
