@@ -7,7 +7,13 @@ if suffix(1) ~= '_'
     suffix = ['_', suffix];
 end
 
-EEG.setname = [EEG.setname, suffix];
+% check if suffix was already added
+if (contains(EEG.setname, suffix))
+    % don't change the setname
+else
+    EEG.setname = [EEG.setname, suffix];
+end
+
 
 % if no path specified save into the wd
 if nargin == 2

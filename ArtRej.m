@@ -1,6 +1,6 @@
-function[] = ArtRej(arProcessList, location_path, save, save_path,...
+function[EEG] = ArtRej(arProcessList, expName, location_path, save, save_path,...
     method, resetFlags, flagId, channels, Twindow, windowSize, threshold,...
-    plotRaw)
+    windowStep, plotRaw)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % A simple function that wraps around EEG/ERP LAB
@@ -14,7 +14,7 @@ for s = 1:length(arProcessList)
     fprintf(['\n\n Running AR on ', arProcessList{s}, '\n\n']);
     
     % Load EEG
-    EEG = pop_loadset([arProcessList{s} '_Binned.set'], location_path);
+    EEG = pop_loadset([arProcessList{s} expName, '.set'], location_path);
     
     % Reset Flags is required
     if (resetFlags)
@@ -23,23 +23,20 @@ for s = 1:length(arProcessList)
     end
     
     % Run AR using peak-to-peak method
-    if (method == 'p2p')
-        
+    if strcmpi('p2p', method)
         thisThreshold = threshold{s};
-        thisWindowSize = windowSize{s};
         
         EEG  = pop_artmwppth( EEG ,...
             'Channel',  channels,...
             'Flag', [ 1 flagId],...
             'Threshold',  thisThreshold,...
             'Twindow', Twindow,...
-            'Windowsize',  thisWindowSize,...
-            'Windowstep', 100 );
+            'Windowsize',  windowSize,...
+            'Windowstep', windowStep );
     
-    elseif (method == 'step')
+    elseif strcmpi('step', method)
         
         thisThreshold = threshold{s};
-        thisWindowSize = windowSize{s};
         
         EEG  = pop_artstep( EEG,...
             'Channel',  29:31,...
@@ -47,7 +44,7 @@ for s = 1:length(arProcessList)
             'Threshold', thisThreshold,...
             'Twindow', Twindow,...
             'Windowsize',  200,...
-            'Windowstep', thisWindowSize);
+            'Windowstep', windowStep );
         
     else
         fprintf('AR method not selected, quitting...');
@@ -66,6 +63,19 @@ for s = 1:length(arProcessList)
     
     % Print Summary of AR
     [EEG, tprej, acce, rej, histoflags ] = pop_summary_AR_eeg_detection(EEG,'none');
+    
+    % Synch markers
+%     if strcmpi('bi', syncEEGLAB)
+%         EEG = pop_syncroartifacts(EEG, 3);
+%         
+%     elseif strcmpi('push', syncEEGLAB)
+%         EEG = pop_syncroartifacts(EEG, 1);
+%         
+%     elseif strcmpi('none', syncEEGLAB) 
+%     else
+%         fprintf('\nSync method not recognised, exiting...\n');
+%         break;
+% end
     
     % Save file and output
     % Save only after all AR methods required have been applied
