@@ -1,3 +1,6 @@
-/Users/aleksandernitka/Documents/GitHub/LAT_EEG/ERP/LAT_3_filter_binOps.erp  
-/Users/aleksandernitka/Documents/GitHub/LAT_EEG/ERP/LAT_2_filter_binOps.erp  
-/Users/aleksandernitka/Documents/GitHub/LAT_EEG/ERP/LAT_1_filter_binOps.erp  
+/Volumes/128gb/LAT_EEG/ERP/LAT_1_ChanOps_rmBs_lpFilt.erp
+/Volumes/128gb/LAT_EEG/ERP/LAT_2_ChanOps_rmBs_lpFilt.erp
+/Volumes/128gb/LAT_EEG/ERP/LAT_3_ChanOps_rmBs_lpFilt.erp
+/Volumes/128gb/LAT_EEG/ERP/LAT_4_ChanOps_rmBs_lpFilt.erp
+/Volumes/128gb/LAT_EEG/ERP/LAT_5_ChanOps_rmBs_lpFilt.erp
+/Volumes/128gb/LAT_EEG/ERP/LAT_6_ChanOps_rmBs_lpFilt.erp
