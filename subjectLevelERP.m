@@ -21,7 +21,7 @@ for s = 1:length(erpProcessList)
     
     if (createIpsiContra)
         
-    % BIN OPS - create ipsi/contra bins
+        % BIN OPS - create ipsi/contra bins
         ERP = pop_binoperator( ERP, {  'prepareContraIpsi',...
             'Lch = [ 1:2:25 26:32]',  'Rch = [ 2:2:24 25:32]',  ...
             'nbin1 = 0.5*bin1@Rch + 0.5*bin2@Lch label NEUTRAL_TARGET_LAT Contra',...
@@ -77,7 +77,7 @@ for s = 1:length(erpProcessList)
             'butter', 'Filter', 'lowpass', 'Order',  2 );
         
         suffix = [suffix '_lpFilt'];
-         
+        
     end
     
     if (save2)
@@ -110,7 +110,19 @@ for s = 1:length(erpProcessList)
     end
     
     if (plotSingleTrials)
+        % Plot Channel ERp for all trials
+        % Sorted in order of occurence.
         
+        chId = 5;
+        figureTitle = 'Tmp Title';
+        figure;
+        erpimage( mean(EEG.data([chId], :),1),...
+            ones(1, EEG.trials)*EEG.xmax*1000,...
+            linspace(EEG.xmin*1000, EEG.xmax*1000, EEG.pnts),...
+            figureTitle, 10, 1 ,'yerplabel','\muV','erp','on',...
+            'limits',[-100 500 NaN NaN NaN NaN NaN NaN] ,...
+            'cbar','on','nosort','on','vert',200,...
+            'topo', { [chId] EEG.chanlocs EEG.chaninfo } );
     end
     
 end

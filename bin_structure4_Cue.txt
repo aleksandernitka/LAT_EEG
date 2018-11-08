@@ -1,0 +1,12 @@
+bin 1
+NEUTRAL cue
+{20}.{30}
+
+bin 2
+NEGATIVE cue
+{21}.{30}
+
+bin 3
+POSITIVE cue
+{22}.{30}
+

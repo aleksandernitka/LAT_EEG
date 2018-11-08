@@ -204,6 +204,11 @@ subjectLevelERP(erpProcessList,...
     true); % electSingleTrials - what electrodes to plot single trails for
 
 
+%% ICA
+method = 'fastica';
+
+
+
 %% GRAND MEANS
 
 % args:

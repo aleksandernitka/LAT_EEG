@@ -33,6 +33,8 @@ for s = 1:length(preprocessList)
     EEG = pop_eegfiltnew(EEG, 'locutoff', 1,'plotfreqz', 0);
     
     % Channel locations
+    % Modified CAML cap includes locations for LHEOG and RHEOG
+    %EEG = pop_chanedit(EEG, 'lookup','standard-10-5-cap385.elp');
     EEG = pop_chanedit(EEG, 'lookup','standard-10-5-cap385.elp');
     
     % Save file
