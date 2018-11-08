@@ -1,12 +1,12 @@
 function[] = subjectLevelERP(erpProcessList, location_path, save_path, ...
     save1, createIpsiContra, rmBaseline, lowPass, save2, plotERP, ...
-    plots_data_path, plotSingleTrials, electSingleTrials)
+    plots_data_path, plotSingleTrials)
 
 
 for s = 1:length(erpProcessList)
     
     % Load set
-    EEG = pop_loadset([erpProcessList{s} '_Binned_ar.set'], location_path);
+    EEG = pop_loadset([erpProcessList{s} '_PrePro_Binned_ar.set'], location_path);
     
     % average without rejected trials
     ERP = pop_averager( EEG , 'Criterion', 'good', 'ExcludeBoundary', 'on', 'SEM', 'off' );
@@ -112,17 +112,27 @@ for s = 1:length(erpProcessList)
     if (plotSingleTrials)
         % Plot Channel ERp for all trials
         % Sorted in order of occurence.
+        channels2plot = [17 18 21 22 23 24];
+        label2plot = {'P7', 'P8', 'PO7' ,'PO8', 'O1', 'O2'};
         
-        chId = 5;
-        figureTitle = 'Tmp Title';
-        figure;
-        erpimage( mean(EEG.data([chId], :),1),...
-            ones(1, EEG.trials)*EEG.xmax*1000,...
-            linspace(EEG.xmin*1000, EEG.xmax*1000, EEG.pnts),...
-            figureTitle, 10, 1 ,'yerplabel','\muV','erp','on',...
-            'limits',[-100 500 NaN NaN NaN NaN NaN NaN] ,...
-            'cbar','on','nosort','on','vert',200,...
-            'topo', { [chId] EEG.chanlocs EEG.chaninfo } );
+        for x = 1:length(channels2plot)
+            
+            chId = channels2plot(x);
+            figureTitle = ['Single Trials ' erpProcessList{s} ' ' label2plot{x}];
+            figure;
+            erpimage( mean(EEG.data([chId], :),1),...
+                ones(1, EEG.trials)*EEG.xmax*1000,...
+                linspace(EEG.xmin*1000, EEG.xmax*1000, EEG.pnts),...
+                figureTitle, 10, 1 ,'yerplabel','\muV','erp','on',...
+                'limits',[-100 500 NaN NaN NaN NaN NaN NaN] ,...
+                'cbar','on','nosort','on','vert',200,...
+                'topo', { [chId] EEG.chanlocs EEG.chaninfo } );
+            
+            savefig([plots_data_path erpProcessList{s} '_' label2plot{x} '_SINGT']);
+            
+        end
+        
+        close all;
     end
     
 end

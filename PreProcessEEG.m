@@ -1,5 +1,4 @@
-function[] = PreProcessEEG(preprocessList, location_path, save_path, binlisterFile, ...
-    epochLen, resample)
+function[] = PreProcessEEG(preprocessList, location_path, save_path, resample)
 
 for s = 1:length(preprocessList)
     
@@ -35,28 +34,10 @@ for s = 1:length(preprocessList)
     % Channel locations
     % Modified CAML cap includes locations for LHEOG and RHEOG
     %EEG = pop_chanedit(EEG, 'lookup','standard-10-5-cap385.elp');
-    EEG = pop_chanedit(EEG, 'lookup','standard-10-5-cap385.elp');
+    EEG = pop_chanedit(EEG, 'lookup','CAML_locs.ced');
     
     % Save file
-    % EEG = saveMyEEG(EEG, 'PrePro', processed_data_path);
-    
-    %% EventList, Binlister & Epoch
-    
-    EEG  = pop_creabasiceventlist( EEG , 'AlphanumericCleaning', 'on',...
-        'BoundaryNumeric', { -99 }, 'BoundaryString', { 'boundary' }, 'Eventlist',...
-        [save_path  preprocessList{s} '_elist.txt']);
-    
-    % Binlister        
-    EEG  = pop_binlister( EEG , 'BDF', binlisterFile, 'ExportEL',...
-        [save_path preprocessList{s} '_elist_binned.txt'], ...
-        'IndexEL',  1, 'SendEL2', 'EEG&Text', 'UpdateEEG', 'on', 'Voutput',...
-        'EEG' );
-    
-    % Epoching and base correction
-    EEG = pop_epochbin( EEG , epochLen,  'pre');
-    
-    % Save data
-    EEG = saveMyEEG(EEG, 'Binned', save_path);
+    EEG = saveMyEEG(EEG, 'PrePro', save_path);
     
 end
 

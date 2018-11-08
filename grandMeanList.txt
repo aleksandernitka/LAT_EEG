@@ -2,5 +2,4 @@
 /Volumes/128gb/LAT_EEG/ERP/LAT_2_ChanOps_rmBs_lpFilt.erp
 /Volumes/128gb/LAT_EEG/ERP/LAT_3_ChanOps_rmBs_lpFilt.erp
 /Volumes/128gb/LAT_EEG/ERP/LAT_4_ChanOps_rmBs_lpFilt.erp
-/Volumes/128gb/LAT_EEG/ERP/LAT_5_ChanOps_rmBs_lpFilt.erp
 /Volumes/128gb/LAT_EEG/ERP/LAT_6_ChanOps_rmBs_lpFilt.erp
